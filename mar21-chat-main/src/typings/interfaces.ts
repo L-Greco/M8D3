@@ -1,4 +1,4 @@
-export type Room = "red" | "blue"
+export type Room = string
 
 export interface User {
   username: string

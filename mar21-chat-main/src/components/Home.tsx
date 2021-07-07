@@ -4,6 +4,7 @@ import { Room, Message, User } from '../typings/interfaces'
 import { io } from 'socket.io-client'
 import uniqid from "uniqid"
 
+
 const ADDRESS = 'http://localhost:3030'
 const socket = io(ADDRESS, { transports: ['websocket'] })
 // this is the socket initialization
@@ -108,6 +109,24 @@ const Home = () => {
     setRoom(r => r === "blue" ? "red" : "blue")
   }
 
+  const createPrivateRoom = async (selectedUser:string) => {
+    const newRoom = {
+      name : userName+ " with "+selectedUser
+    }
+    console.log(newRoom)
+    const res = await fetch(ADDRESS+"/room",
+    {method:"POST",
+    headers: {
+      "Content-Type" :"application/json"
+    },
+    body : JSON.stringify(newRoom)
+  })
+  if(res.ok)getChatHistory(userName+ " with "+selectedUser)
+  
+
+}
+  
+
 
 
   return (
@@ -154,7 +173,10 @@ const Home = () => {
           <div>Connected users</div>
           <ListGroup>
             {onlineUsers.filter(u => u.id !== socket.id && u.room === room).map((user) => (
-              <ListGroup.Item key={uniqid()}>{user.username}</ListGroup.Item>
+              <ListGroup.Item key={uniqid()}
+              style={{cursor:"pointer"}}
+              onClick={()=> createPrivateRoom(user.username)}
+              >{user.username}</ListGroup.Item>
             ))}
           </ListGroup>
         </Col>

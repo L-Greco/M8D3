@@ -4,6 +4,7 @@ import RoomModel from "../models/Room/index.js"
 const chatRouter = express.Router()
 
 chatRouter.post('/room', async (req, res) => {
+    console.log(req.body);
     const room = new RoomModel(req.body)
     await room.save()
 
