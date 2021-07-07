@@ -1,61 +1,86 @@
+import cors from "cors"
 import express from "express"
 import { createServer } from "http"
 import { Server } from "socket.io"
-import cors from "cors"
+import chatRouter from "./services/Chat.js"
+import list from "express-list-endpoints"
+import mongoose from "mongoose"
+import RoomModel from "./models/Room/index.js"
 
 const app = express();
-const server = createServer(app);
-const io = new Server(server, { allowEIO3: true });
-
 app.use(cors())
+app.use(express.json())
+
+
+const server = createServer(app);
+const io = new Server(server, { allowEIO3: true })
 
 let onlineUsers = []
 
+// Add "event listeners" on your socket when it's connecting
 io.on("connection", socket => {
+
     console.log(socket.id)
 
-    socket.join("main-room")
     console.log(socket.rooms)
 
-    socket.on("setUsername", ({ username }) => {
-        console.log("here")
-        onlineUsers =
-            onlineUsers
-                .filter(user => user.username !== username)
-                .concat({
-                    username,
-                    id: socket.id
-                })
-        console.log(onlineUsers)
+    // socket.on("join-room", (room) => {
+    //     socket.join(room)
+    //     console.log(socket.rooms)
+    // })
 
+    socket.on("setUsername", ({ username, room }) => {
+        onlineUsers.push({ username: username, id: socket.id, room })
+
+        //.emit - echoing back to itself
         socket.emit("loggedin")
 
+        //.broadcast.emit - emitting to everyone else
         socket.broadcast.emit("newConnection")
 
-    })
+        socket.join(room)
 
-    socket.on("sendmessage", message => {
-        // io.sockets.in("main-room").emit("message", message)
-        socket.to("main-room").emit("message", message)
+        console.log(socket.rooms)
 
-        // saveMessageToDb(message)
+        //io.sockets.emit - emitting to everybody in the known world
+        //io.sockets.emit("newConnection")
     })
 
     socket.on("disconnect", () => {
-        console.log("Disconnected socket with id " + socket.id)
-
+        console.log("Disconnecting...")
         onlineUsers = onlineUsers.filter(user => user.id !== socket.id)
-
-        socket.broadcast.emit("newConnection")
-
     })
 
-});
+    socket.on("sendMessage", async ({ message, room }) => {
 
-app.get("/online-users", (req, res) => {
-    res.send({ onlineUsers })
+        await RoomModel.findOneAndUpdate({ name: room }, {
+            $push: { chatHistory: message }
+        })
+
+        socket.to(room).emit("message", message)
+    })
+
+
 })
 
-server.listen(3030, () => {
-    console.log("Server listening on port 3030")
-});
+
+app.get('/online-users', (req, res) => {
+    res.status(200).send({ onlineUsers })
+})
+
+app.use('/', chatRouter)
+
+
+const port = 3030
+
+mongoose
+    .connect(process.env.ATLAS_URL, { useNewUrlParser: true })
+    .then(() => {
+        console.log("Connected to mongo")
+        // Listen using the httpServer -
+        // listening with the express instance will start a new one!!
+        server.listen(port, () => {
+            console.log(list(app))
+            console.log("Server listening on port " + port)
+        })
+    })

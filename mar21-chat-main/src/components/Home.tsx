@@ -2,6 +2,7 @@ import { useState, useEffect, ChangeEvent, FormEvent } from 'react'
 import { Container, Col, Row, Form, ListGroup, Button } from 'react-bootstrap'
 import { Room, Message, User } from '../typings/interfaces'
 import { io } from 'socket.io-client'
+import uniqid from "uniqid"
 
 const ADDRESS = 'http://localhost:3030'
 const socket = io(ADDRESS, { transports: ['websocket'] })
@@ -129,7 +130,7 @@ const Home = () => {
           </Form>
           <ul>
             {chatHistory.map((message) => (
-              <li key={message.id} className="my-2">
+              <li key={uniqid()} className="my-2">
                 <strong>{message.sender}</strong>
                 <span className="mx-1"> | </span>
                 <span>{message.text}</span>
@@ -153,7 +154,7 @@ const Home = () => {
           <div>Connected users</div>
           <ListGroup>
             {onlineUsers.filter(u => u.id !== socket.id && u.room === room).map((user) => (
-              <ListGroup.Item key={user.id}>{user.username}</ListGroup.Item>
+              <ListGroup.Item key={uniqid()}>{user.username}</ListGroup.Item>
             ))}
           </ListGroup>
         </Col>
