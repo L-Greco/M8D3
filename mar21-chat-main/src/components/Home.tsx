@@ -111,6 +111,7 @@ const Home = () => {
 
   const createPrivateRoom = async (selectedUser:string) => {
     const newRoom = {
+      // array with users here 
       name : userName+ " with "+selectedUser
     }
     console.log(newRoom)
@@ -121,7 +122,14 @@ const Home = () => {
     },
     body : JSON.stringify(newRoom)
   })
-  if(res.ok)getChatHistory(userName+ " with "+selectedUser)
+  if(res.ok) {
+    let data = await res.json()
+    getChatHistory(userName+ " with "+selectedUser)
+    
+    setRoom(data._id)
+
+  }
+  
   
 
 }
